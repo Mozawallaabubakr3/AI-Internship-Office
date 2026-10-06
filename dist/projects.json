@@ -1,0 +1,169 @@
+[
+  {
+    "id": "office",
+    "name": "AI Internship Office",
+    "summary": "Evidence-based internship research, independent fit reviews, truthful application preparation and persistent progress records.",
+    "preview": null,
+    "repository": null,
+    "visibility": null,
+    "package": "AI-Internship-Office",
+    "workflow": [
+      {
+        "name": "Evidence intake",
+        "files": [
+          "office.py",
+          "pipeline.py"
+        ],
+        "description": "Normalize sources, deduplicate opportunities and preserve candidate facts and eligibility gaps."
+      },
+      {
+        "name": "Independent council",
+        "files": [
+          "pipeline.py",
+          "review_inbox.py"
+        ],
+        "description": "Five distinct reviewers evaluate a frozen evidence packet, challenge one another and record their actual final votes."
+      },
+      {
+        "name": "Application preparation",
+        "files": [
+          "office_efficiency.py",
+          "review_inbox.py"
+        ],
+        "description": "Reuse confirmed answers and exact materials, checkpoint preparation and keep destination permissions tied to the application."
+      },
+      {
+        "name": "Records and world",
+        "files": [
+          "server.py",
+          "robot_chat.py",
+          "dist/ai-world.js"
+        ],
+        "description": "Persist application stages and employer confirmations; render selectable crew workflows and separate budgeted conversations."
+      }
+    ]
+  },
+  {
+    "id": "interview",
+    "name": "Finance Interview App",
+    "summary": "Six technical interview questions with typed or dictated answers, structured follow-ups and rubric-based feedback in the local prototype.",
+    "preview": null,
+    "repository": null,
+    "visibility": null,
+    "package": null,
+    "workflow": [
+      {
+        "name": "Question sequence",
+        "files": [
+          "data/pilot.json"
+        ],
+        "description": "Present the fixed six-question pilot sequence and the associated follow-up options."
+      },
+      {
+        "name": "Answers and follow-ups",
+        "files": [
+          "server.js"
+        ],
+        "description": "Collect candidate answers. Browser speech recognition can supply dictated text; the configured model may select follow-ups."
+      },
+      {
+        "name": "Rubric and scores",
+        "files": [
+          "server.js"
+        ],
+        "description": "Use the answer guide for feedback; validate score ranges and compute totals. Grading requires a configured API key and is not validated against human graders."
+      },
+      {
+        "name": "Practice preview",
+        "files": [
+          "README.md"
+        ],
+        "description": "The public demo demonstrates the question flow with AI processing and external actions disabled."
+      }
+    ]
+  },
+  {
+    "id": "video",
+    "name": "edity \u00b7 AI Video Editor",
+    "summary": "An editing desk for footage, narration, creative briefs, synchronized captions, screen demonstrations, animation and export review.",
+    "preview": null,
+    "repository": null,
+    "visibility": null,
+    "package": "edity-AI-Video-Editor",
+    "workflow": [
+      {
+        "name": "Inspect and transcribe",
+        "files": [
+          "scripts/media.py"
+        ],
+        "description": "Inspect media streams and reuse cached word timing and transcript intermediates."
+      },
+      {
+        "name": "Editorial decisions",
+        "files": [
+          "SKILL.md",
+          "references/approved-explainer-style.md"
+        ],
+        "description": "Plan complete speech cuts, demonstrations and scene timing using the approved editing style."
+      },
+      {
+        "name": "Compose and animate",
+        "files": [
+          "scripts/media.py",
+          "assets/council-motion/Scenes.tsx"
+        ],
+        "description": "Map captions through the cut timeline, place demonstrations and use original Remotion animation examples when needed."
+      },
+      {
+        "name": "Review and export",
+        "files": [
+          "scripts/dashboard.py",
+          "references/dashboard.md"
+        ],
+        "description": "Show progress and representative previews, export MP4 and verify streams and timing. Actual rendering remains in the separate editing app."
+      }
+    ]
+  },
+  {
+    "id": "accounting",
+    "name": "Accounting Outreach Desk",
+    "summary": "Public firm research, named decision makers, verified business emails, exact draft approvals and reply handling for accounting-firm outreach.",
+    "preview": null,
+    "repository": null,
+    "visibility": null,
+    "package": "Accounting-Outreach-Desk",
+    "workflow": [
+      {
+        "name": "Firm evidence",
+        "files": [
+          "outreach/agent.py",
+          "outreach/net.py"
+        ],
+        "description": "Bound public-page research, respect source limits and preserve evidence about named decision makers."
+      },
+      {
+        "name": "Email verification",
+        "files": [
+          "outreach/providers.py"
+        ],
+        "description": "Find and verify business-email candidates through configured providers; unresolved or ambiguous records stay unresolved."
+      },
+      {
+        "name": "Draft and approve",
+        "files": [
+          "outreach/agent.py",
+          "outreach/store.py"
+        ],
+        "description": "Bind approval to the exact recipient, message and attachment. Sender identity and postal-address setup are required."
+      },
+      {
+        "name": "Send and reconcile",
+        "files": [
+          "outreach/providers.py",
+          "outreach/cli.py"
+        ],
+        "description": "Send only authorized drafts within limits and permitted hours, record receipts and stop follow-ups for replies and opt-outs. Sending defaults off."
+      }
+    ]
+  }
+]

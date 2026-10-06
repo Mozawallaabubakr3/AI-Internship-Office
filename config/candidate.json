@@ -1,0 +1,12 @@
+{
+  "name": "Example candidate",
+  "provenance": "Synthetic configuration; replace with confirmed facts locally.",
+  "facts": [],
+  "preferences": {},
+  "boundaries": [
+    "Use confirmed facts. Explicit authorization is required for external actions."
+  ],
+  "unknowns": [
+    "Candidate profile needs local setup."
+  ]
+}

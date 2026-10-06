@@ -1,0 +1,30 @@
+{
+  "scheduled_daily_limits": {
+    "scout_batch": 4,
+    "new_council": 20,
+    "source_attempt": 80
+  },
+  "daily_limit_overrides": {},
+  "source_attempts_per_url_per_day": 2,
+  "review_batch_size": 5,
+  "worker_minutes": 20,
+  "reply_check_minutes": 30,
+  "notes": "Limits bound new automated work, not application completeness. Save unfinished work and report budget deferrals; never claim the five-submission target was met. Exact credits cannot be capped by this local bridge.",
+  "workflow_mode": "application_first",
+  "work_order": [
+    "actionable_replies",
+    "approved_applications",
+    "saved_lead_councils",
+    "targeted_saved_lead_verification",
+    "discovery_only_if_backlog_cannot_supply_next_application"
+  ],
+  "discovery_policy": "Pause general discovery while a viable saved lead can advance. Before discovery, record why saved leads cannot supply the next application; pending approval alone is not a reason to discover more.",
+  "overnight": {
+    "enabled": true,
+    "start_hour": 0,
+    "end_hour": 7,
+    "submission_target": 5,
+    "mode": "prepare_and_submit",
+    "timezone": "America/New_York"
+  }
+}

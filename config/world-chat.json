@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "model": "gpt-6-sol",
+  "max_messages_per_day": 20,
+  "max_reported_tokens_per_day": 80000,
+  "reserve_tokens_per_message": 12000,
+  "max_seconds": 120,
+  "max_pending": 3
+}

@@ -1,0 +1,42 @@
+{
+  "office": {
+    "name": "Internship Office",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "scout": {
+    "name": "Signal Scout",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "council": {
+    "name": "Council Core",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "writer": {
+    "name": "Draft Engineer",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "operator": {
+    "name": "Application Pilot",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "researcher": {
+    "name": "Connection Radar",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "outreach": {
+    "name": "Message Architect",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "interview": {
+    "name": "Finance Interview Studio",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "video": {
+    "name": "Video Studio",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  },
+  "accounting": {
+    "name": "Accounting Outreach Hub",
+    "role": "Discuss this project component using supplied confirmed evidence. State uncertainty and do not claim external actions or worker execution."
+  }
+}
