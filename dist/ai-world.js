@@ -23,7 +23,7 @@
   window.aiWorldNavigation=()=>({mode:destination==='map'?'universe':'world',project:destination==='map'?'office':destination});
   window.aiWorldIsTravelling=()=>travelling;
   window.aiWorldAnchors=packet=>{
-    for(const point of packet){const el=document.querySelector(`[data-station-anchor="${point.id}"]`);if(!el)continue;el.hidden=!point.visible;el.style.left=`${point.x}px`;el.style.top=`${point.y}px`;}
+    for(const point of packet){const el=document.querySelector(`[data-station-anchor="${point.id}"]`);if(!el)continue;el.hidden=!point.visible;el.style.left=`clamp(94px,${point.x}px,calc(100% - 94px))`;el.style.top=`clamp(28px,${point.y}px,calc(100% - 34px))`;}
   };
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   async function travel(id){
