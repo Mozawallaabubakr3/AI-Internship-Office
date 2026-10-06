@@ -36,8 +36,8 @@ export function createOrbitalScene(host, options={}) {
   canvas.setAttribute('role','img');
   host.prepend(canvas);
   const camera=new THREE.PerspectiveCamera(36,1,.1,700);
-  const startRadius=detail?6.6:overview?68:project==='office'?62:56;
-  const startTheta=detail?.08:overview?.08:.36,startPhi=detail?1.32:overview?.68:1.05;
+  const startRadius=detail?6.6:overview?72:project==='office'?62:56;
+  const startTheta=detail?.08:overview?.08:.36,startPhi=detail?1.32:overview?.88:1.05;
   const target=new THREE.Vector3(0,detail?1.55:-.55,detail||overview?0:3.1);
   let radius=startRadius,theta=startTheta,phi=startPhi;
   let goalRadius=radius,goalTheta=theta,goalPhi=phi;const goalTarget=target.clone();let environmentEffects=null;
@@ -45,10 +45,10 @@ export function createOrbitalScene(host, options={}) {
   let enabled=options.motion!==false&&!reduced.matches, visible=true, dirty=true;
   let pointer=null,hovered=null,selected=options.selected??0;
   let lastShadow=-1,hasRendered=false,lastDraw=0,frames=0,intervalStart=performance.now(),measuredFps=0;
-  const mats=new Map(), geos=new Map(), textures=[], picks=[], robots=[], chips=[], pulses=[],instances=[],movingInstances=[],anchors=[],orbiting=[],stellarMaterials=[];
+  const mats=new Map(), geos=new Map(), textures=[], picks=[], robots=[], chips=[], pulses=[],instances=[],movingInstances=[],anchors=[],orbiting=[],stellarMaterials=[],galaxyEffects=[];
   const world=new THREE.Group();scene.add(world);
   scene.add(new THREE.HemisphereLight(0xc5ddff,0x253955,overview?.045:.6));
-  const sun=new THREE.DirectionalLight(0xffe5ba,overview?.025:2.7);sun.position.set(-8,24,12);sun.castShadow=!detail;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:24,bottom:-24,near:1,far:100});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.needsUpdate=true;scene.add(sun);
+  const sun=new THREE.DirectionalLight(0xffe5ba,overview?.025:2.7);sun.position.set(-8,24,12);sun.castShadow=!detail&&!overview;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-25,right:25,top:24,bottom:-24,near:1,far:100});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.needsUpdate=true;scene.add(sun);
   const rim=new THREE.DirectionalLight(0xabc7ff,overview?.03:1.15);rim.position.set(9,5,-8);scene.add(rim);
   function material(color,emissive=false,opacity=1){
     const key=[color,emissive,opacity].join(':');
@@ -336,37 +336,68 @@ export function createOrbitalScene(host, options={}) {
       #include <colorspace_fragment>
     }`});mats.set('stellar-surface'+i,m);stellarMaterials.push(m);return m;
   }
+  // Volumetric spiral destinations: star positions and clouds occupy real 3D space.
+  // Picking uses one small proxy per destination, never the tens of thousands of particles.
   function solarSystems(){
-    SYSTEMS.forEach((s,i)=>{
-      const g=new THREE.Group();g.position.set(...s.position);g.rotation.set([-.1,.16,-.19,.08][i],i*.12,[.08,-.12,.1,-.07][i]);world.add(g);
-      const starColor=['#ffd6a3','#fff1c8','#c9e0ff','#ffb675'][i];
-      const star=mesh(g,geometry('SphereGeometry',[1.35,64,40]),stellarMaterial(i,starColor),-1.1,.55,0);
-      const haloMaterial=new THREE.SpriteMaterial({color:starColor,transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false});mats.set('solar-halo'+i,haloMaterial);
-      const c=document.createElement('canvas');c.width=c.height=256;const cx=c.getContext('2d'),gradient=cx.createRadialGradient(128,128,0,128,128,128);gradient.addColorStop(0,'#ffffff00');gradient.addColorStop(.22,'#ffffff00');gradient.addColorStop(.29,'#ffffffb0');gradient.addColorStop(.4,'#ffffff35');gradient.addColorStop(.72,'#ffffff09');gradient.addColorStop(1,'#ffffff00');cx.fillStyle=gradient;cx.fillRect(0,0,256,256);const t=new THREE.CanvasTexture(c);textures.push(t);haloMaterial.map=t;
-      const glow=new THREE.Sprite(haloMaterial);glow.position.copy(star.position);glow.scale.set(9,9,1);g.add(glow);
-      const light=new THREE.PointLight(starColor,105,25,2);light.position.copy(star.position);g.add(light);
-      // Small magnetic prominences follow the stellar surface instead of a flat glow disc.
-      for(let n=0;n<5;n++){const a=n*1.27+i*.4,axis=new THREE.Vector3(Math.cos(a),Math.sin(a),.3).normalize(),tangent=new THREE.Vector3(-axis.y,axis.x,0).normalize();const curve=new THREE.CubicBezierCurve3(axis.clone().multiplyScalar(1.3).add(tangent.clone().multiplyScalar(.15)),axis.clone().multiplyScalar(1.7).add(tangent.clone().multiplyScalar(.35)),axis.clone().multiplyScalar(1.7).sub(tangent.clone().multiplyScalar(.35)),axis.clone().multiplyScalar(1.3).sub(tangent.clone().multiplyScalar(.15)));const geo=new THREE.TubeGeometry(curve,24,.013,5,false);geos.set('stellar-loop'+i+':'+n,geo);mesh(g,geo,material('#ff8c40',true,.55),-1.1,.55,0);}
-      for(const r of [3.15,4.85,6.7,8.4]){const orbit=mesh(g,geometry('TorusGeometry',[r,.011,4,160]),material('#788ba6',true,.12),-1.1,.02,0);orbit.rotation.x=Math.PI/2;}
-      for(let n=0;n<4;n++){
-        const a=i*1.7+n*2.2,r=[3.15,4.85,6.7,8.4][n],kind=['rock',i===3?'mars':'ocean','gas','mars'][n],size=[.33,.63,.86,.42][n];
-        const pivot=new THREE.Group();pivot.userData.dynamic=true;g.add(pivot);pivot.position.set(-1.1+Math.cos(a)*r,0,Math.sin(a)*r);
-        const planet=mesh(pivot,geometry('SphereGeometry',[size,48,32]),planetMaterial(kind));planet.rotation.z=.18+i*.1;planet.rotation.y=i*1.8;
-        if(n===1){const at=new THREE.MeshBasicMaterial({color:'#7aaeff',transparent:true,opacity:.095,side:THREE.BackSide,depthWrite:false});mats.set('planet-atmosphere'+i,at);mesh(pivot,geometry('SphereGeometry',[size*1.08,48,32]),at);}
-        if(n===2){
-          const rm=new THREE.ShaderMaterial({uniforms:{uColor:{value:new THREE.Color('#a7967d')}},vertexShader:`varying vec3 vLocal;void main(){vLocal=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 vLocal;uniform vec3 uColor;void main(){float r=length(vLocal.xy);float grains=.54+.16*sin(r*490.)+.1*sin(r*197.);float gap=smoothstep(.017,.045,abs(r-1.43));float edge=smoothstep(1.04,1.12,r)*(1.-smoothstep(1.75,1.85,r));gl_FragColor=vec4(uColor*(.64+.22*sin(r*47.)),grains*gap*edge*.75);}`,side:THREE.DoubleSide,transparent:true,depthWrite:false});mats.set('solar-rings'+i,rm);
-          const ring=mesh(pivot,geometry('RingGeometry',[1.04,1.85,160,12]),rm);ring.rotation.x=-.48-i*.14;ring.rotation.y=.2;
+    const coreCanvas=document.createElement('canvas');coreCanvas.width=coreCanvas.height=256;
+    const context=coreCanvas.getContext('2d'),gradient=context.createRadialGradient(128,128,0,128,128,128);
+    gradient.addColorStop(0,'#fffef3f0');gradient.addColorStop(.08,'#fff4d1cf');gradient.addColorStop(.2,'#f7d9c17a');gradient.addColorStop(.42,'#b49be632');gradient.addColorStop(.7,'#506bb312');gradient.addColorStop(1,'#252c6800');
+    context.fillStyle=gradient;context.fillRect(0,0,256,256);
+    const coreTexture=new THREE.CanvasTexture(coreCanvas);coreTexture.colorSpace=THREE.SRGBColorSpace;textures.push(coreTexture);
+    const starVertex=`attribute float aSize;attribute float aPhase;varying vec3 vColor;varying float vPhase;uniform float uRatio;uniform float uScale;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vColor=color;vPhase=aPhase;gl_Position=projectionMatrix*p;gl_PointSize=clamp(aSize*uScale*uRatio/max(1.,-p.z),.65,22.*uRatio);}`;
+    const cloudVertex=`attribute float aSize;varying vec3 vColor;varying float vAlpha;attribute float aAlpha;uniform float uRatio;uniform float uScale;void main(){vec4 p=modelViewMatrix*vec4(position,1.);vColor=color;vAlpha=aAlpha;gl_Position=projectionMatrix*p;gl_PointSize=clamp(aSize*uScale*uRatio/max(1.,-p.z),1.,160.*uRatio);}`;
+    SYSTEMS.forEach((s,index)=>{
+      let seed=9419+index*1733;
+      const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+      const normal=()=>Math.sqrt(-2*Math.log(Math.max(.00001,random())))*Math.cos(random()*Math.PI*2);
+      const g=new THREE.Group();g.position.set(...s.position);g.rotation.set([.12,-.25,.32,-.08][index],index*.57,[.18,-.1,-.14,.22][index]);world.add(g);
+      const radius=10.3,starPositions=[],starColors=[],starSizes=[],phases=[];
+      const palettes=[['#d6eaff','#5e99e9','#8b95da','#f5dfc6','#aa9adc'],['#eadcff','#8b6ae1','#d383c7','#f5d7dc','#eb9cb9'],['#fff0dc','#c87585','#edaa6b','#ffe6bd','#f5b1a8'],['#dcfff0','#50a8b1','#8cc6bc','#f1edcf','#9cbddd']];
+      const [paleHex,blueHex,violetHex,warmHex,knotHex]=palettes[index];
+      const pale=new THREE.Color(paleHex),blue=new THREE.Color(blueHex),violet=new THREE.Color(violetHex),warm=new THREE.Color(warmHex);
+      const spiral=(r,arm)=>arm*Math.PI*2/3+Math.log(1+r)*2.15+.16*Math.sin(r*.8+arm*2)+index*.5;
+      for(let n=0;n<22000;n++){
+        let x,y,z,r,angle;
+        if(n%17<5){x=normal()*1.45;y=normal()*.47;z=normal()*1.15;r=Math.hypot(x,z);}
+        else{
+          r=Math.pow(random(),.62)*radius;angle=n%5===0?random()*Math.PI*2:spiral(r,n%3)+normal()*(.12+.019*r);
+          x=Math.cos(angle)*r;z=Math.sin(angle)*r;y=normal()*(.085+.017*r)+Math.sin(angle*2+r)*.025*r;
         }
-        if(n===3){mesh(pivot,geometry('SphereGeometry',[.13,20,14]),planetMaterial('rock'),.73,.07,.14);}
-        orbiting.push({mesh:pivot,r,phase:a,center:-1.1,speed:.024/(n+1)});
+        starPositions.push(x,y,z);
+        const tint=r<2.3?warm.clone().lerp(pale,random()*.45):blue.clone().lerp(n%7===0?violet:pale,random());
+        const brightness=.5+Math.pow(random(),4)*1.7;tint.multiplyScalar(brightness);starColors.push(tint.r,tint.g,tint.b);
+        starSizes.push(n%569===0?.19+random()*.1:.013+Math.pow(random(),3)*.061);phases.push(random()*Math.PI*2);
       }
-      for(let n=0;n<72;n++){const a=n*2.399+i*.6,r=5.65+.26*Math.sin(n*17),rock=mesh(g,geometry('IcosahedronGeometry',[.04+(n%4)*.014,1]),planetMaterial('rock'),-1.1+Math.cos(a)*r,.06*Math.sin(n),Math.sin(a)*r);rock.rotation.set(n*.7,n*.4,n*.2);}
-      const station=new THREE.Group();station.position.set(3.2,.35,2.5);g.add(station);
-      const hub=mesh(station,geometry('CylinderGeometry',[.58,.58,1.6,24]),material('#c6cbd1'),0,.55,0);hub.rotation.z=Math.PI/2;
-      for(const side of [-1,1]){round(station,1.35,.06,1.55,'#193c60',side*1.75,.55,0);for(let n=0;n<6;n++)box(station,1.27,.015,.015,'#6c9bb1',side*1.75,.59,-.62+n*.25);rod(station,[side*.7,.5,0],[side*1.5,.5,0],'#acb9c7',.04);}
-      const dock=mesh(station,geometry('TorusGeometry',[.52,.06,10,56]),material(s.color,true),0,.37,1.1);dock.rotation.x=Math.PI/2;
-      pickGroup(g,{type:'system',id:s.id,title:s.title});
-      g.updateMatrixWorld(true);anchors.push({id:s.id,position:g.localToWorld(new THREE.Vector3(3.2,-.25,5.5))});
+      const starGeometry=new THREE.BufferGeometry();geos.set('galaxy-stars-'+index,starGeometry);
+      starGeometry.setAttribute('position',new THREE.Float32BufferAttribute(starPositions,3));starGeometry.setAttribute('color',new THREE.Float32BufferAttribute(starColors,3));starGeometry.setAttribute('aSize',new THREE.Float32BufferAttribute(starSizes,1));starGeometry.setAttribute('aPhase',new THREE.Float32BufferAttribute(phases,1));
+      const starMaterial=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uRatio:{value:1},uScale:{value:900}},vertexShader:starVertex,fragmentShader:`varying vec3 vColor;varying float vPhase;uniform float uTime;void main(){vec2 p=gl_PointCoord-.5;float r=length(p)*2.;float light=exp(-r*r*15.)+.12*exp(-r*r*3.);float cross=pow(max(0.,1.-abs(p.x)*24.),6.)*exp(-abs(p.y)*9.)+pow(max(0.,1.-abs(p.y)*24.),6.)*exp(-abs(p.x)*9.);gl_FragColor=vec4(vColor,light*(.82+.055*sin(uTime*.35+vPhase))+cross*.035);
+#include <colorspace_fragment>
+}`,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});mats.set('galaxy-stars-'+index,starMaterial);
+      const stars=new THREE.Points(starGeometry,starMaterial);stars.frustumCulled=false;stars.renderOrder=3;g.add(stars);
+      const positions=[],colors=[],sizes=[],alphas=[];
+      for(let n=0;n<3900;n++){
+        const coreCloud=n%6===0,r=coreCloud?Math.abs(normal())*1.6:1.5+Math.pow(random(),.7)*9.2,angle=coreCloud||n%5===0?random()*Math.PI*2:spiral(r,n%3)+normal()*(.13+.022*r),height=normal()*(coreCloud?.36:.15+.017*r);
+        positions.push(Math.cos(angle)*r,height,Math.sin(angle)*r);
+        const cloud=coreCloud?warm.clone().lerp(pale,.65):blue.clone().lerp(violet,.25+random()*.6);if(!coreCloud&&n%23===0)cloud.set(knotHex);cloud.multiplyScalar(.58+random()*.8);colors.push(cloud.r,cloud.g,cloud.b);
+        sizes.push(.22+Math.pow(random(),2)*1.3);alphas.push(.04+random()*.075);
+      }
+      const cloudGeometry=new THREE.BufferGeometry();geos.set('galaxy-clouds-'+index,cloudGeometry);cloudGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));cloudGeometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));cloudGeometry.setAttribute('aSize',new THREE.Float32BufferAttribute(sizes,1));cloudGeometry.setAttribute('aAlpha',new THREE.Float32BufferAttribute(alphas,1));
+      const cloudMaterial=new THREE.ShaderMaterial({uniforms:{uRatio:{value:1},uScale:{value:900}},vertexShader:cloudVertex,fragmentShader:`varying vec3 vColor;varying float vAlpha;void main(){vec2 p=(gl_PointCoord-.5)*2.;float r=length(p);float lobe=1.+.14*sin(p.x*14.+p.y*10.)+.12*cos(p.y*17.-p.x*7.);float a=exp(-r*r*5.5)*smoothstep(1.,.55,r)*vAlpha*lobe;gl_FragColor=vec4(vColor,a);
+#include <colorspace_fragment>
+}`,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});mats.set('galaxy-clouds-'+index,cloudMaterial);
+      const clouds=new THREE.Points(cloudGeometry,cloudMaterial);clouds.frustumCulled=false;clouds.renderOrder=1;g.add(clouds);
+      // Thin, irregular absorption lanes cut through the luminous spiral disc.
+      const dustMaterial=new THREE.ShaderMaterial({uniforms:{uPhase:{value:index*.5}},vertexShader:`varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec2 vP;uniform float uPhase;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+1.),f.x),f.y);}void main(){float r=length(vP),a=atan(vP.y,vP.x),arm=sin((a-log(1.+r)*2.4-uPhase)*3.+.15*noise(vP*3.));float lane=pow(max(0.,arm),12.);float grain=noise(vP*6.)*.55+noise(vP*14.)*.3;float edge=smoothstep(2.,3.,r)*(1.-smoothstep(8.8,11.,r));gl_FragColor=vec4(.012,.014,.032,lane*grain*edge*.58);}`,transparent:true,depthWrite:false,side:THREE.DoubleSide});mats.set('galaxy-dust-'+index,dustMaterial);
+      const dust=mesh(g,geometry('PlaneGeometry',[23,23]),dustMaterial,0,.06,0);dust.rotation.x=-Math.PI/2;dust.renderOrder=2;
+      const glowMaterial=new THREE.SpriteMaterial({map:coreTexture,transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});mats.set('galaxy-core-'+index,glowMaterial);
+      const core=new THREE.Sprite(glowMaterial);core.scale.set(8,6,1);core.renderOrder=4;g.add(core);
+      // A flattened 3D bulge and warm disk remain visible as the camera orbits.
+      const diskMaterial=new THREE.MeshBasicMaterial({map:coreTexture,transparent:true,opacity:.27,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false});mats.set('galaxy-bulge-'+index,diskMaterial);
+      const disk=mesh(g,geometry('PlaneGeometry',[11,11]),diskMaterial,0,.015,0);disk.rotation.x=-Math.PI/2;disk.renderOrder=0;
+      const proxyMaterial=new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:false,transparent:true,opacity:0});mats.set('galaxy-pick-'+index,proxyMaterial);
+      const proxy=mesh(g,geometry('SphereGeometry',[10.8,24,12]),proxyMaterial);proxy.scale.y=.19;proxy.userData.pick={type:'system',id:s.id,title:s.title};picks.push(proxy);
+      g.updateMatrixWorld(true);anchors.push({id:s.id,position:g.localToWorld(new THREE.Vector3(0,-.35,8.2))});
+      galaxyEffects.push({group:g,stars:starGeometry,clouds:cloudGeometry,starMaterial,cloudMaterial,count:22000,cloudCount:3900});
     });
   }
 
@@ -421,10 +452,10 @@ export function createOrbitalScene(host, options={}) {
     staticMeshes.forEach(m=>m.removeFromParent());
   }
   const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
-  function publishStats(){host.dataset.graphics=JSON.stringify({fps:measuredFps,frameCap:quality==='cinematic'?60:30,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio:renderer.getPixelRatio(),quality,shadows:renderer.shadowMap.enabled,design:'solar-stations-v1',mode:detail?'robot':overview?'universe':project,paused:!enabled||reduced.matches||document.hidden||!visible||!!options.suspended?.()});}
+  function publishStats(){host.dataset.graphics=JSON.stringify({fps:measuredFps,frameCap:quality==='cinematic'?60:30,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio:renderer.getPixelRatio(),quality,shadows:renderer.shadowMap.enabled,design:'volumetric-galaxies-v2',mode:detail?'robot':overview?'universe':project,paused:!enabled||reduced.matches||document.hidden||!visible||!!options.suspended?.()});}
   function hit(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera);const h=ray.intersectObjects(picks,false).find(h=>h.object.userData.pick||h.object.userData.instancePicks?.[h.instanceId]);return h?(h.object.userData.pick||h.object.userData.instancePicks[h.instanceId]):null;}
   function positionCamera(){camera.position.set(target.x+radius*Math.sin(phi)*Math.sin(theta),target.y+radius*Math.cos(phi),target.z+radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(target);}
-  function resize(){if(disposed)return;const r=host.getBoundingClientRect(),wasPortrait=camera.aspect<1;width=Math.max(1,r.width);height=Math.max(1,r.height);camera.aspect=width/height;if(!detail&&wasPortrait!==(camera.aspect<1))goalRadius=camera.aspect<1?Math.min(140,startRadius*(overview?.8:.95)/camera.aspect):startRadius;camera.fov=detail?36:(camera.aspect<1?55:36);camera.updateProjectionMatrix();renderer.setPixelRatio(quality==='low'?1:Math.min(devicePixelRatio,quality==='cinematic'?2:1.4));environmentEffects?.setQuality(quality,renderer.getPixelRatio());renderer.setSize(width,height,false);publishStats();dirty=true;schedule();}
+  function resize(){if(disposed)return;const r=host.getBoundingClientRect(),wasPortrait=camera.aspect<1;width=Math.max(1,r.width);height=Math.max(1,r.height);camera.aspect=width/height;if(!detail&&wasPortrait!==(camera.aspect<1))goalRadius=camera.aspect<1?Math.min(140,startRadius*(overview?.8:.95)/camera.aspect):startRadius;camera.fov=detail?36:(camera.aspect<1?55:36);camera.updateProjectionMatrix();renderer.setPixelRatio(quality==='low'?1:Math.min(devicePixelRatio,quality==='cinematic'?2:1.4));environmentEffects?.setQuality(quality,renderer.getPixelRatio());galaxyEffects.forEach(g=>{g.stars.setDrawRange(0,quality==='low'?7500:quality==='balanced'?15000:g.count);g.clouds.setDrawRange(0,quality==='low'?1200:quality==='balanced'?2600:g.cloudCount);for(const m of [g.starMaterial,g.cloudMaterial]){m.uniforms.uRatio.value=renderer.getPixelRatio();m.uniforms.uScale.value=height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov*.5)));}});renderer.setSize(width,height,false);publishStats();dirty=true;schedule();}
   function onDown(e){if(e.button!==0&&e.button!==2)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false,pan:e.button===2||e.shiftKey};canvas.setPointerCapture(e.pointerId);}
   function onMove(e){
     if(pointer&&pointer.id===e.pointerId){const dx=e.clientX-pointer.lastX,dy=e.clientY-pointer.lastY;pointer.moved||=Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>5;if(pointer.pan&&!detail){const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);goalTarget.addScaledVector(right,-dx*radius*.0007).addScaledVector(up,dy*radius*.0007);goalTarget.clamp(new THREE.Vector3(-38,-18,-38),new THREE.Vector3(38,18,38));}else{goalTheta-=dx*.005;goalPhi=Math.min(detail?1.65:1.52,Math.max(detail?.85:.25,goalPhi+dy*.004));}pointer.lastX=e.clientX;pointer.lastY=e.clientY;dirty=true;schedule();}
@@ -445,7 +476,7 @@ export function createOrbitalScene(host, options={}) {
     const damping=reduced.matches?1:1-Math.exp(-Math.max(dt,1/60)*12);theta+=(goalTheta-theta)*damping;phi+=(goalPhi-phi)*damping;radius+=(goalRadius-radius)*damping;target.lerp(goalTarget,damping);
     if(animate){
       environmentEffects?.update(elapsed);
-      stellarMaterials.forEach(m=>m.uniforms.uTime.value=elapsed);
+      stellarMaterials.forEach(m=>m.uniforms.uTime.value=elapsed);galaxyEffects.forEach(g=>{g.starMaterial.uniforms.uTime.value=elapsed;});
       orbiting.forEach(o=>{const a=o.phase+elapsed*o.speed;o.mesh.position.x=o.center+Math.cos(a)*o.r;o.mesh.position.z=Math.sin(a)*o.r;});
       robots.forEach((r,i)=>{
         r.head.rotation.z=Math.sin(elapsed*.8+i)*.025;
@@ -481,7 +512,7 @@ export function createOrbitalScene(host, options={}) {
   return {
     select,
     setMotion(value){enabled=!!value;visibility();},
-    setQuality(value){quality=['low','balanced','cinematic'].includes(value)?value:'cinematic';renderer.shadowMap.enabled=!detail&&quality!=='low';sun.shadow.mapSize.set(quality==='cinematic'?2048:1024,quality==='cinematic'?2048:1024);sun.shadow.map?.dispose();sun.shadow.map=null;sun.shadow.needsUpdate=true;world.traverse(o=>{if(o.isPointLight)o.visible=quality!=='low';});resize();},
+    setQuality(value){quality=['low','balanced','cinematic'].includes(value)?value:'cinematic';renderer.shadowMap.enabled=!detail&&!overview&&quality!=='low';sun.shadow.mapSize.set(quality==='cinematic'?2048:1024,quality==='cinematic'?2048:1024);sun.shadow.map?.dispose();sun.shadow.map=null;sun.shadow.needsUpdate=true;world.traverse(o=>{if(o.isPointLight)o.visible=quality!=='low';});resize();},
     reset(){goalRadius=!detail&&camera.aspect<1?Math.min(140,startRadius*(overview?.8:.95)/camera.aspect):startRadius;goalTheta=startTheta;goalPhi=startPhi;goalTarget.set(0,detail?1.55:-.55,detail||overview?0:3.1);dirty=true;schedule();},
     wake:visibility,
     stats(){return {mode:detail?'robot':'world',fps:measuredFps,frameCap:quality==='cinematic'?60:30,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio:renderer.getPixelRatio(),canvas:[canvas.width,canvas.height],geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,paused:!enabled||reduced.matches||document.hidden||!visible||!!options.suspended?.(),quality};},
